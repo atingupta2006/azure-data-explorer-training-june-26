@@ -1,0 +1,59 @@
+# Curated Microsoft Learn seeds for ADX TCS course authoring.
+# Crawler follows in-domain links one level deep (azure/data-explorer, kusto/*).
+
+version: 1
+max_link_depth: 1
+allowed_path_prefixes:
+  - /en-us/azure/data-explorer/
+  - /en-us/kusto/
+
+seeds:
+  - topic: fundamentals
+    urls:
+      - https://learn.microsoft.com/en-us/azure/data-explorer/data-explorer-overview
+      - https://learn.microsoft.com/en-us/azure/data-explorer/how-it-works
+      - https://learn.microsoft.com/en-us/azure/data-explorer/kusto/management/extents-overview
+      - https://learn.microsoft.com/en-us/training/modules/intro-to-azure-data-explorer/
+
+  - topic: ingestion
+    urls:
+      - https://learn.microsoft.com/en-us/azure/data-explorer/ingest-data-overview
+      - https://learn.microsoft.com/en-us/azure/data-explorer/ingestion-supported-formats
+      - https://learn.microsoft.com/en-us/kusto/management/data-ingestion/ingest-into-command?view=microsoft-fabric
+      - https://learn.microsoft.com/en-us/kusto/management/mappings?view=microsoft-fabric
+      - https://learn.microsoft.com/en-us/azure/data-explorer/ingest-data-streaming
+      - https://learn.microsoft.com/en-us/kusto/management/streaming-ingestion-policy?view=azure-data-explorer
+
+  - topic: event-hub-iot
+    urls:
+      - https://learn.microsoft.com/en-us/azure/data-explorer/ingest-data-event-hub-overview
+      - https://learn.microsoft.com/en-us/azure/data-explorer/create-event-hubs-connection
+      - https://learn.microsoft.com/en-us/azure/data-explorer/create-iot-hub-connection
+      - https://learn.microsoft.com/en-us/azure/data-explorer/integrate-data-overview
+
+  - topic: policies-silver
+    urls:
+      - https://learn.microsoft.com/en-us/kusto/management/update-policy?view=microsoft-fabric
+      - https://learn.microsoft.com/en-us/kusto/management/update-policy-tutorial?view=microsoft-fabric
+      - https://learn.microsoft.com/en-us/azure/data-explorer/kusto/management/alter-table-update-policy-command
+      - https://learn.microsoft.com/en-us/azure/data-explorer/kusto/query/scalar-data-types/dynamic
+
+  - topic: kql-advanced
+    urls:
+      - https://learn.microsoft.com/en-us/kusto/query/joinoperator?view=microsoft-fabric
+      - https://learn.microsoft.com/en-us/kusto/query/make-series?view=microsoft-fabric
+      - https://learn.microsoft.com/en-us/kusto/query/anomaly-functions?view=microsoft-fabric
+      - https://learn.microsoft.com/en-us/kusto/management/materialized-views/materialized-view-overview?view=microsoft-fabric
+
+  - topic: modeling-performance
+    urls:
+      - https://learn.microsoft.com/en-us/azure/data-explorer/kusto/management/retention-policy
+      - https://learn.microsoft.com/en-us/azure/data-explorer/kusto/management/cache-policy
+      - https://learn.microsoft.com/en-us/kusto/query/query-best-practices?view=microsoft-fabric
+      - https://learn.microsoft.com/en-us/azure/data-explorer/manage-cluster-choose-sku
+
+  - topic: security-ops
+    urls:
+      - https://learn.microsoft.com/en-us/azure/data-explorer/kusto/management/access-control/role-based-access-control
+      - https://learn.microsoft.com/en-us/azure/data-explorer/kusto/management/row-level-security-policy
+      - https://learn.microsoft.com/en-us/azure/data-explorer/using-monitor-insights

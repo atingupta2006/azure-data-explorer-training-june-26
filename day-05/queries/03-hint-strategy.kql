@@ -1,0 +1,30 @@
+// Day 05 — Join optimization with hint.strategy
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-05/README.md Section 3
+
+// Q1 — Join with hint.strategy=shuffle (large fact + dimension pattern)
+SecLogsParsed
+| where Timestamp > datetime(2026-06-11)
+| project Timestamp, SourceIP, EventType, Facility, Severity
+| join hint.strategy=shuffle kind=inner (
+    ThreatIntelRef
+    | where MatchType == "SourceIP"
+    | project MatchKey, ThreatCategory, SeverityHint
+) on $left.SourceIP == $right.MatchKey
+| project Timestamp, EventType, SourceIP, ThreatCategory, SeverityHint, Facility
+| order by Timestamp asc
+
+// Q2 — Summarize enriched high-severity matches
+SecLogsParsed
+| where Timestamp > datetime(2026-06-11)
+| join hint.strategy=shuffle kind=inner (
+    ThreatIntelRef | where MatchType == "SourceIP"
+    | project MatchKey, ThreatCategory
+) on $left.SourceIP == $right.MatchKey
+| where Severity in ("High", "Critical")
+| summarize MatchCount = count() by ThreatCategory
+
+// Q3 — Awareness: broadcast vs shuffle (ThreatIntelRef has 8 rows — optimizer often auto-broadcasts)
+print
+    Note = "Lab uses shuffle for TB-scale syntax practice",
+    ThreatIntelRows = toscalar(ThreatIntelRef | count),
+    BroadcastTypical = "When right side is tiny (8 IOCs), engine may broadcast without hint"

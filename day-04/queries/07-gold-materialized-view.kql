@@ -1,0 +1,37 @@
+// Day 04 — Gold materialized view and retention policies
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-04/README.md Section 6 + 8
+// Q1 includes .drop ifexists — safe for first run and re-runs in YOUR database only
+
+// Q1 — Create Gold materialized view on Silver (backfill loads existing Silver rows)
+.drop materialized-view SecLogsHourly ifexists
+
+.create materialized-view with (backfill=true, effectiveDateTime=datetime(2020-01-01)) SecLogsHourly on table SecLogsParsed
+{
+    SecLogsParsed
+    | summarize
+        EventCount = count(),
+        HighSeverityCount = countif(Severity in ("High", "Critical"))
+      by HourBucket = bin(Timestamp, 1h), Facility, EventType
+}
+
+.show materialized-views
+
+// Q2 — Query Gold (wait 30–60s after Q1 if this returns 0 rows)
+SecLogsHourly
+| order by HourBucket asc, Facility asc, EventType asc
+
+// Q3 — Verify total events preserved (expected sum EventCount = 3500)
+SecLogsHourly
+| summarize TotalEvents = sum(EventCount), HighSeverityTotal = sum(HighSeverityCount)
+
+// Q4 — Dashboard-style top buckets
+SecLogsHourly
+| summarize Total = sum(EventCount) by Facility
+| top 5 by Total desc
+
+// Q5 — Show retention and caching policies (database selected in Web UI)
+.show database policy retention
+
+.show table SecLogsParsed policy retention
+
+.show table SecLogsParsed policy caching

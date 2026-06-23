@@ -1,0 +1,31 @@
+// Day 05 — Verify full pipeline from Days 2–4 (gate before Lab 1)
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-05/README.md | labs.md Pipeline gate
+// Gate: stop if Q4 Ready = false — complete Day 4 labs first (Silver 3500, ThreatIntelRef 8, Gold MV)
+
+// Q1 — Silver row count (expected: 3500)
+SecLogsParsed
+| count
+
+// Q2 — Threat intel dimension (expected: 8)
+ThreatIntelRef
+| count
+
+// Q3 — Gold MV total (expected: sum EventCount = 3500)
+SecLogsHourly
+| summarize TotalEvents = sum(EventCount)
+
+// Q4 — Pipeline readiness (run as one block; expected: Ready = true)
+print
+    SilverRows = toscalar(SecLogsParsed | count),
+    ThreatIntelRows = toscalar(ThreatIntelRef | count),
+    GoldEventCount = toscalar(SecLogsHourly | summarize sum(EventCount)),
+    Ready = (
+        toscalar(SecLogsParsed | count) == 3500
+        and toscalar(ThreatIntelRef | count) == 8
+        and toscalar(SecLogsHourly | summarize sum(EventCount)) == 3500
+    )
+
+// Q5 — Materialized view health (expected: IsHealthy = true)
+.show materialized-views
+| where Name == "SecLogsHourly"
+| project Name, IsHealthy, LastRunResult

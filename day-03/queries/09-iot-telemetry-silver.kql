@@ -1,0 +1,35 @@
+// Day 03 — Lab 9: Analyze IoT telemetry on Silver (after update policy)
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-03/README.md Section 6.10
+// Prerequisite: Lab 5 complete — SecLogsParsed = 3500, SourceSystem IoT-Hub = 500
+// Silver has typed columns; deviceId is still only in Bronze RawPayload (not a Silver column)
+
+// Q1 — IoT rows on Silver (expected: 500)
+SecLogsParsed
+| where SourceSystem == "IoT-Hub"
+| count
+
+// Q2 — Event types from IoT stream (expected: SensorAnomaly 200; DeviceHeartbeat, ConfigChange, FirewallDeny 100 each)
+SecLogsParsed
+| where SourceSystem == "IoT-Hub"
+| summarize EventCount = count() by EventType
+| order by EventCount desc
+
+// Q3 — High/Critical IoT alerts by facility and type
+SecLogsParsed
+| where SourceSystem == "IoT-Hub"
+| where Severity in ("High", "Critical")
+| summarize AlertCount = count() by Facility, EventType
+| order by AlertCount desc
+
+// Q4 — Sensor anomalies per hour (preview of Day 4 time-series; expected: 200 SensorAnomaly total)
+SecLogsParsed
+| where SourceSystem == "IoT-Hub" and EventType == "SensorAnomaly"
+| summarize AnomalyCount = count() by HourBucket = bin(Timestamp, 1h), Facility
+| order by HourBucket asc, Facility asc
+
+// Q5 — OT substation telemetry only (expected: Substation-C + Substation-D = 400 rows)
+SecLogsParsed
+| where SourceSystem == "IoT-Hub"
+| where Facility in ("Substation-C", "Substation-D")
+| summarize EventCount = count() by Facility, EventType
+| order by Facility asc, EventType asc

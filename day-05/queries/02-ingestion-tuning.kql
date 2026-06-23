@@ -1,0 +1,23 @@
+// Day 05 — Ingestion monitoring and tuning concepts
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-05/README.md Section 2
+// Use .show tables details — not .show tables extents with inline filters
+// Run blocks 1–5 separately (Shift+Enter each)
+
+// Block 1 — Recent ingestion failures
+.show ingestion failures
+
+// Block 2 — Bronze JSON mapping reference
+.show table SecLogsRaw ingestion mappings
+
+// Block 3 — Bronze table extent metadata
+.show table SecLogsRaw details
+
+// Q4 — Extent count per pipeline table (expected: SecLogsParsed TotalRowCount = 3500)
+.show tables details
+| where TableName in ("SecLogsRaw", "SecLogsParsed", "SecLogsHourly")
+| project TableName, TotalExtents, TotalRowCount
+| order by TableName asc
+
+// Q5 — Gold MV row total cross-check (expected: sum EventCount = 3500)
+SecLogsHourly
+| summarize GoldEventCount = sum(EventCount)

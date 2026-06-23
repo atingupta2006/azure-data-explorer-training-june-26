@@ -1,0 +1,26 @@
+// Day 05 — Materialized view vs on-demand aggregation
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-05/README.md Section 4
+// If Q2/Q3 empty after Day 4 MV create: wait 30–60 s and re-run, or see 04-verify-mv-parity.kql
+
+// Q1 — On-demand: live summarize on Silver (scans more data at TB scale)
+SecLogsParsed
+| where Timestamp > datetime(2026-06-11)
+| summarize
+    EventCount = count(),
+    HighSeverityCount = countif(Severity in ("High", "Critical"))
+  by HourBucket = bin(Timestamp, 1h), Facility, EventType
+| order by HourBucket asc
+
+// Q2 — Gold MV: pre-aggregated (preferred for dashboards)
+SecLogsHourly
+| where HourBucket > datetime(2026-06-11)
+| order by HourBucket asc, Facility asc
+
+// Q3 — Compare totals (both should align: sum EventCount = 3500)
+let onDemandTotal = toscalar(
+    SecLogsParsed
+    | summarize Total = count());
+let mvTotal = toscalar(
+    SecLogsHourly
+    | summarize Total = sum(EventCount));
+print OnDemandTotal = onDemandTotal, MaterializedViewTotal = mvTotal, TotalsMatch = (onDemandTotal == mvTotal)

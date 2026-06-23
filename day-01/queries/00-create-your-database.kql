@@ -1,0 +1,26 @@
+// Day 01 — Create YOUR workspace database
+// Cluster: adx-training-tcs | Prerequisite: cluster-level permission (granted for this course)
+//
+// Naming convention: LogsDB_<your-id>  — must be unique on the cluster
+// Examples: LogsDB_u01, LogsDB_u14, LogsDB_smith
+//
+// Steps:
+//   1) Connect to adx-training-tcs in Web UI (any existing database context is OK)
+//   2) Edit YOUR_SUFFIX below, run .create database
+//   3) Run .show databases to confirm
+//   4) Select your new database in the left-pane dropdown
+//   5) Run .show database and .show tables (empty until Lab 2)
+
+// --- Edit YOUR_SUFFIX before running (letters, numbers, underscore only) ---
+.create database LogsDB_YOUR_SUFFIX
+
+// Verify your database appears (replace YOUR_SUFFIX in the filter)
+.show databases
+| where DatabaseName == "LogsDB_YOUR_SUFFIX"
+| project DatabaseName, DatabaseAccessMode, PersistentStorage
+
+// --- Select LogsDB_YOUR_SUFFIX in the Web UI dropdown, then run: ---
+
+.show database
+
+.show tables

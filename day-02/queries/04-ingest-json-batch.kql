@@ -1,0 +1,14 @@
+// Day 02 — Lab 4: Batch ingest JSON from Blob
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-02/README.md Sections 3–5
+// format=multijson + ingestionMappingReference=SecLogsRaw_JsonMapping
+
+.ingest into table SecLogsRaw
+(
+    h'https://<storage-account>.blob.core.windows.net/training-data/bronze/sec-app-logs.json;managed_identity=system'
+)
+with (format='multijson', ingestionMappingReference='SecLogsRaw_JsonMapping')
+
+// Verification (expected: 1500)
+SecLogsRaw
+| where RecordFormat == "JSON"
+| count

@@ -1,0 +1,25 @@
+// Day 01 — Summarize and timechart
+// Database: LogsDB_u01 (select in Web UI before running)
+
+// Q1 — Event count by EventType (FirewallDeny expected: 500)
+PracticeSecurityEvents
+| summarize EventCount = count() by EventType
+| order by EventCount desc
+
+// Q2 — Events per 15-minute bin by EventType
+PracticeSecurityEvents
+| where Timestamp > datetime(2026-06-10T08:00:00Z)
+| summarize EventCount = count() by EventType, bin(Timestamp, 15m)
+| order by Timestamp asc
+
+// Q3 — Timechart: events per 15-minute bin (all types)
+PracticeSecurityEvents
+| where Timestamp > datetime(2026-06-10T08:00:00Z)
+| summarize EventCount = count() by bin(Timestamp, 15m)
+| render timechart
+
+// Q4 — Timechart: FirewallDeny vs AuthFailure over time
+PracticeSecurityEvents
+| where EventType in ("FirewallDeny", "AuthFailure")
+| summarize EventCount = count() by EventType, bin(Timestamp, 15m)
+| render timechart

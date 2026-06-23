@@ -1,0 +1,26 @@
+// Day 03 — Update policy and one-time backfill to Silver
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-03/README.md Section 6.5–6.7
+// Step 1 — run this ENTIRE single line as ONE command (do not split across lines)
+
+.alter table SecLogsParsed policy update @'[{"IsEnabled":true,"Source":"SecLogsRaw","Query":"SecLogsRaw | extend Timestamp = coalesce(todatetime(RawPayload.Timestamp), IngestionTime) | extend EventType = tostring(RawPayload.EventType) | extend SourceIP = tostring(RawPayload.SourceIP) | extend DestinationHost = tostring(RawPayload.DestinationHost) | extend UserPrincipal = tostring(RawPayload.UserPrincipal) | extend Severity = tostring(RawPayload.Severity) | extend Message = tostring(RawPayload.Message) | extend Facility = tostring(RawPayload.Facility) | extend SourceSystem = case(RecordFormat == \"JSON\", \"Batch-JSON\", RecordFormat == \"CSV\", \"Batch-CSV\", RecordFormat == \"EventHub\", \"EventHub\", RecordFormat == \"IoT\", \"IoT-Hub\", \"Unknown\") | project Timestamp, EventType, SourceIP, DestinationHost, UserPrincipal, Severity, Message, Facility, SourceSystem","IsTransactional":false,"PropagateIngestionProperties":false}]'
+
+.show table SecLogsParsed policy update
+
+// Step 2 — One-time backfill of existing Bronze rows (Day 2 batch + stream data)
+.set-or-append SecLogsParsed <| SecLogsRaw
+| extend Timestamp = coalesce(todatetime(RawPayload.Timestamp), IngestionTime)
+| extend EventType = tostring(RawPayload.EventType)
+| extend SourceIP = tostring(RawPayload.SourceIP)
+| extend DestinationHost = tostring(RawPayload.DestinationHost)
+| extend UserPrincipal = tostring(RawPayload.UserPrincipal)
+| extend Severity = tostring(RawPayload.Severity)
+| extend Message = tostring(RawPayload.Message)
+| extend Facility = tostring(RawPayload.Facility)
+| extend SourceSystem = case(RecordFormat == "JSON", "Batch-JSON", RecordFormat == "CSV", "Batch-CSV", RecordFormat == "EventHub", "EventHub", RecordFormat == "IoT", "IoT-Hub", "Unknown")
+| project Timestamp, EventType, SourceIP, DestinationHost, UserPrincipal, Severity, Message, Facility, SourceSystem
+
+// Verification (expected: 3500)
+SecLogsParsed
+| count
+
+// Optional idempotent re-run (manual only): see 05b-idempotent-backfill.kql

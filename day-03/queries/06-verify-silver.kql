@@ -1,0 +1,22 @@
+// Day 03 — Verify Silver layer SecLogsParsed
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-03/README.md Section 6.9 | Lab 5 / pre-Lab 7
+
+// Q1 — Total Silver rows (expected: 3500)
+SecLogsParsed
+| count
+
+// Q2 — Rows by SourceSystem (expected: Batch-CSV 1000, Batch-JSON 1500, EventHub 500, IoT-Hub 500)
+SecLogsParsed
+| summarize RowCount = count() by SourceSystem
+| order by SourceSystem asc
+
+// Q3 — Bronze vs Silver row parity (run as one block)
+print
+    BronzeRows = toscalar(SecLogsRaw | count),
+    SilverRows = toscalar(SecLogsParsed | count),
+    Match = (toscalar(SecLogsRaw | count) == toscalar(SecLogsParsed | count))
+
+// Q4 — Event types in Silver
+SecLogsParsed
+| summarize EventCount = count() by EventType
+| order by EventCount desc

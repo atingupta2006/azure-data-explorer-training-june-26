@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "adx-training-tools"
+version = "0.1.0"
+description = "MCP tools and validators for ADX TCS training materials"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.2.0",
+    "click>=8.1.0",
+    "pyyaml>=6.0.1",
+    "pydantic>=2.5.0",
+    "python-dotenv>=1.0.0",
+    "azure-kusto-data>=4.3.0",
+    "azure-identity>=1.15.0",
+  "azure-eventhub>=5.12.0",
+  "azure-cli>=2.67.0",
+  "boto3>=1.34.0",
+]
+
+[project.optional-dependencies]
+docs = [
+  "chromadb>=0.5.0",
+  "httpx>=0.27.0",
+  "beautifulsoup4>=4.12.0",
+]
+
+[project.scripts]
+adx-tools = "adx_training_tools.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

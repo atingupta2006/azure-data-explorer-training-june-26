@@ -1,0 +1,29 @@
+// Day 02 — Lab 5: Batch ingest firewall CSV from Blob
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-02/README.md Sections 4–5
+// Replace <storage-account> with the training storage account (example: stadxtcs2026tcs)
+// Prerequisite: 05-create-csv-mapping.kql completed
+
+// Step 1 — Ingest real CSV from Blob (header row skipped)
+.ingest into table SecLogsCsvStg
+(
+    h'https://<storage-account>.blob.core.windows.net/training-data/bronze/sec-web-logs.csv;managed_identity=system'
+)
+with (format='csv', ingestionMappingReference='SecLogsCsvStg_CsvMapping', ignoreFirstRecord=true)
+
+// Step 2 — Wait 30–60 seconds, then verify staging
+SecLogsCsvStg
+| count
+
+// Step 3 — Promote staging rows into Bronze (pack → RawPayload)
+.append SecLogsRaw <| SecLogsCsvToBronze()
+
+// Step 4 — Verification (expected: 1000 CSV rows; AuthFailure 200)
+SecLogsRaw
+| where RecordFormat == "CSV"
+| count
+
+SecLogsRaw
+| where RecordFormat == "CSV"
+| extend EventType = tostring(RawPayload.EventType)
+| where EventType == "AuthFailure"
+| count

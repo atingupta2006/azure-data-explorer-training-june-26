@@ -1,0 +1,18 @@
+// Day 04 — Anomaly detection on time-series
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-04/README.md Section 4
+
+// Q1 — Build hourly series for FirewallDeny events and decompose
+let series = SecLogsParsed
+| where EventType == "FirewallDeny"
+| make-series EventCount=count() default=0 on Timestamp from datetime(2026-06-11) to datetime(2026-06-13) step 1h;
+series
+| extend (anomalies, score, baseline) = series_decompose_anomalies(EventCount, 1.5, -1, 'linefit')
+| project EventCount, baseline, score, anomalies
+
+// Q2 — Flag anomalous buckets (expected: 0 or 1 rows on lab data — empty is OK)
+SecLogsParsed
+| make-series EventCount=count() default=0 on Timestamp from datetime(2026-06-11) to datetime(2026-06-13) step 1h
+| extend (anomalies, score, baseline) = series_decompose_anomalies(EventCount, 1.5, -1, 'linefit')
+| mv-expand Timestamp to typeof(datetime), EventCount to typeof(long), anomalies to typeof(long), score to typeof(double), baseline to typeof(double)
+| where anomalies == 1
+| project Timestamp, EventCount, score, baseline

@@ -1,0 +1,21 @@
+// Day 04 — Verify Gold materialized view SecLogsHourly
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-04/README.md Section 6.4 | Lab 7
+// Prerequisite: Q1 in 07-gold-materialized-view.kql completed; wait 30–60 seconds after create
+
+// Q1 — MV registered
+.show materialized-views
+
+// Q2 — Sample Gold rows (may be empty if backfill still running — wait and re-run)
+SecLogsHourly
+| order by HourBucket asc, Facility asc, EventType asc
+| take 5
+
+// Q3 — Locked total (expected sum EventCount = 3500)
+SecLogsHourly
+| summarize TotalEvents = sum(EventCount), HighSeverityTotal = sum(HighSeverityCount)
+
+// Q4 — Silver vs Gold parity (run as one block)
+print
+    SilverRows = toscalar(SecLogsParsed | count),
+    GoldEventCount = toscalar(SecLogsHourly | summarize sum(EventCount)),
+    Match = (toscalar(SecLogsParsed | count) == toscalar(SecLogsHourly | summarize sum(EventCount)))

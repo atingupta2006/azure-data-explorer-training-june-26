@@ -1,0 +1,60 @@
+// Day 05 — Verify capstone investigation minimums (Lab 7 gate)
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-05/README.md Section 9 | Lab 7
+// Prerequisite: 07-capstone-investigation.kql Steps 1–5 completed
+
+// Q1 — Bronze lineage for SCADA gateway (expected: >= 1 row per RecordFormat present)
+SecLogsRaw
+| extend Host = tostring(RawPayload.DestinationHost)
+| where Host == "scada-gw.utility.local"
+| summarize RawEvents = count() by RecordFormat, SourceFile
+
+// Q2 — Silver AuthFailure count (expected: >= 1)
+SecLogsParsed
+| where DestinationHost == "scada-gw.utility.local" and EventType == "AuthFailure"
+| count
+
+// Q3 — Threat intel enrichment (expected: >= 1 row; e.g. 10.20.1.44 / BruteForceTarget)
+SecLogsParsed
+| where DestinationHost == "scada-gw.utility.local" and EventType == "AuthFailure"
+| join hint.strategy=shuffle kind=inner (
+    ThreatIntelRef | where MatchType == "SourceIP"
+    | project MatchKey, ThreatCategory
+) on $left.SourceIP == $right.MatchKey
+| count
+
+// Q4 — Gold Substation-A AuthFailure hours (expected: >= 1 bucket)
+SecLogsHourly
+| where Facility == "Substation-A" and EventType == "AuthFailure"
+| summarize TotalAuthFailures = sum(EventCount)
+
+// Q5 — Capstone readiness (run as one block)
+print
+    ScadaAuthFailures = toscalar(
+        SecLogsParsed
+        | where DestinationHost == "scada-gw.utility.local" and EventType == "AuthFailure"
+        | count),
+    ThreatEnrichedRows = toscalar(
+        SecLogsParsed
+        | where DestinationHost == "scada-gw.utility.local" and EventType == "AuthFailure"
+        | join hint.strategy=shuffle kind=inner (
+            ThreatIntelRef | where MatchType == "SourceIP" | project MatchKey
+        ) on $left.SourceIP == $right.MatchKey
+        | count),
+    GoldSubAAuthFailures = toscalar(
+        SecLogsHourly
+        | where Facility == "Substation-A" and EventType == "AuthFailure"
+        | summarize sum(EventCount)),
+    CapstoneReady = (
+        toscalar(SecLogsParsed | where DestinationHost == "scada-gw.utility.local" and EventType == "AuthFailure" | count) >= 1
+        and toscalar(
+            SecLogsParsed
+            | where DestinationHost == "scada-gw.utility.local" and EventType == "AuthFailure"
+            | join hint.strategy=shuffle kind=inner (
+                ThreatIntelRef | where MatchType == "SourceIP" | project MatchKey
+            ) on $left.SourceIP == $right.MatchKey
+            | count) >= 1
+        and toscalar(
+            SecLogsHourly
+            | where Facility == "Substation-A" and EventType == "AuthFailure"
+            | summarize sum(EventCount)) >= 1
+    )

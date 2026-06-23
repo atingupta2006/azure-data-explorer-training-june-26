@@ -1,0 +1,36 @@
+// Day 04 — User-defined functions (UDFs)
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-04/README.md Section 7
+// Run blocks in order — create each function before the query that calls it (.create-or-alter is re-run safe)
+
+// Q1 — Create SeverityRank function
+.create-or-alter function with (docstring = "Map severity string to numeric rank", folder = "Training") SeverityRank(Severity:string)
+{
+    case(
+        Severity == "Low", 1,
+        Severity == "Medium", 2,
+        Severity == "High", 3,
+        Severity == "Critical", 4,
+        0)
+}
+
+// Q1b — Verify SeverityRank exists (optional)
+.show functions
+
+// Q2 — Use SeverityRank in query
+SecLogsParsed
+| extend Rank = SeverityRank(Severity)
+| where Rank >= 3
+| summarize HighCriticalCount = count() by Facility, EventType
+| order by HighCriticalCount desc
+
+// Q3 — Create IsOTFacility function (run this entire block — create line + body together)
+// OT-adjacent = Operational Technology–adjacent (substation / SCADA / field IoT facilities)
+.create-or-alter function with (docstring = "True when Facility is OT-adjacent (substation or SCADA gateway)", folder = "Training") IsOTFacility(Facility:string)
+{
+    Facility in ("Substation-A", "Substation-B", "Substation-C", "Substation-D", "SCADA-Gateway")
+}
+
+// Q3b — Use IsOTFacility in query
+SecLogsParsed
+| where IsOTFacility(Facility)
+| summarize OTEventCount = count() by Facility, EventType

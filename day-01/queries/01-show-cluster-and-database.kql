@@ -1,0 +1,10 @@
+// Day 01 — Cluster exploration (run BEFORE creating your database)
+// Cluster: adx-training-tcs
+//
+// These two commands work at cluster scope — no database selection required.
+// After you create your database (00-create-your-database.kql), select it in the
+// Web UI and run .show database / .show tables from that file.
+
+.show cluster
+
+.show databases

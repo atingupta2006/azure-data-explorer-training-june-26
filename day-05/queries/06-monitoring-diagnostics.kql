@@ -1,0 +1,37 @@
+// Day 05 — Cluster and query monitoring (Lab 6 — operator diagnostics before capstone)
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-05/README.md Section 8
+// Security Operations Center (SOC) analysts hunt in KQL
+// Network Operations Center (NOC) / platform operators use .show when ingest or dashboards look wrong
+// Run blocks 1–7 separately (Shift+Enter each)
+
+// Block 1 — Cluster metadata
+.show cluster
+
+// Block 2 — Database metadata
+.show database
+
+// Block 3 — Ingestion failure log
+.show ingestion failures
+
+// Block 4 — Recent data-ingestion operations
+.show operations
+| where Operation == "DataIngestion"
+| top 10 by StartedOn desc
+
+// Block 5 — Table size and extent distribution (capacity awareness)
+.show tables details
+| where TableName in ("SecLogsRaw", "SecLogsParsed", "SecLogsHourly", "ThreatIntelRef")
+| project TableName, TotalExtents, TotalOriginalSize, HotExtents, HotOriginalSize
+
+// Block 6 — Materialized view (MV) health
+.show materialized-views
+| project Name, SourceTable, IsHealthy, LastRunResult
+
+// Q5 — Recent query commands (query performance monitoring awareness)
+.show commands
+| top 10 by StartedOn desc
+| project StartedOn, User, Duration, State, CommandType
+
+
+.show queries
+| top 20 by StartedOn desc

@@ -1,0 +1,28 @@
+// Day 01 — Filters, project, extend
+// Database: LogsDB_u01 (select in Web UI before running)
+
+// Q1 — AuthFailure filter (expected: 400 rows)
+PracticeSecurityEvents
+| where EventType == "AuthFailure"
+| order by Timestamp asc
+
+// Q2 — High and Critical severity (expected: 800 rows)
+PracticeSecurityEvents
+| where Severity in ("High", "Critical")
+| order by Timestamp asc
+
+// Q3 — extend SeverityRank (1=Low, 2=Medium, 3=High, 4=Critical)
+PracticeSecurityEvents
+| extend SeverityRank = case(
+    Severity == "Low", 1,
+    Severity == "Medium", 2,
+    Severity == "High", 3,
+    Severity == "Critical", 4,
+    0)
+| where EventType == "AuthFailure"
+| project Timestamp, EventType, Severity, SeverityRank, Message, Facility
+
+// Q4 — project key columns for security review
+PracticeSecurityEvents
+| where Facility in ("Substation-A", "SCADA-Gateway")
+| project Timestamp, EventType, SourceIP, UserPrincipal, Message

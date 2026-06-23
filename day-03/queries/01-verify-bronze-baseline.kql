@@ -1,0 +1,13 @@
+// Day 03 — Lab 1: Verify Day 2 Bronze baseline before streaming
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-03/README.md Sections 1.3–1.4
+// Prerequisite: Day 2 Labs 4–5 complete (JSON 1500 + native CSV 1000)
+// STOP if count != 2500 — complete Day 2 Labs 4–5 first
+
+// Expected total: 2500
+SecLogsRaw
+| count
+
+// Expected: sec-app-logs.json JSON 1500, sec-web-logs.csv CSV 1000
+SecLogsRaw
+| summarize RowCount = count() by RecordFormat, SourceFile
+| order by SourceFile asc

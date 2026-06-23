@@ -1,0 +1,15 @@
+// Day 05 — Verify RlsDemoEvents + RLS lab complete (Lab 5 gate)
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-05/README.md Section 6 | Lab 5
+// Prerequisite: 05-security-rbac-rls.kql Q0–Q8 completed (Q4c disable must run before this file; RlsUserScope has your UPN)
+
+// Q1 — Row count (expected: 10 — RLS disabled)
+RlsDemoEvents
+| count
+
+// Q2 — Facility distribution (expected: Substation-A 4, Substation-B 3, SCADA-Gateway 3)
+RlsDemoEvents
+| summarize EventCount = count() by Facility
+| order by Facility asc
+
+// Q3 — RLS policy status (expected: IsEnabled = false after Q4c)
+.show table RlsDemoEvents policy row_level_security

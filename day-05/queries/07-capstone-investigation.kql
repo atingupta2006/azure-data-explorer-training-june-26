@@ -1,0 +1,44 @@
+// Day 05 — Capstone: utility cyber investigation (Bronze → Silver → Gold)
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-05/README.md Section 9
+// Scenario: Investigate authentication failures targeting SCADA gateway
+// After Steps 1–5: run 07-verify-capstone.kql — Q5 CapstoneReady should be true
+
+// Step 1 — Bronze: confirm raw payloads exist for gateway host (JSON + EventHub sources)
+SecLogsRaw
+| extend Host = tostring(RawPayload.DestinationHost)
+| where Host == "scada-gw.utility.local"
+| summarize RawEvents = count() by RecordFormat, SourceFile
+
+// Step 2 — Silver: AuthFailure events on SCADA gateway
+SecLogsParsed
+| where DestinationHost == "scada-gw.utility.local"
+| where EventType == "AuthFailure"
+| project Timestamp, SourceIP, UserPrincipal, Severity, Message, Facility, SourceSystem
+| order by Timestamp asc
+
+// Step 3 — Threat intel enrichment (join AuthFailure rows to ThreatIntelRef)
+SecLogsParsed
+| where DestinationHost == "scada-gw.utility.local"
+| where EventType == "AuthFailure"
+| join hint.strategy=shuffle kind=inner (
+    ThreatIntelRef
+    | where MatchType == "SourceIP"
+    | project MatchKey, ThreatCategory, SeverityHint
+) on $left.SourceIP == $right.MatchKey
+| project Timestamp, SourceIP, ThreatCategory, SeverityHint, Message
+
+// Step 4 — Gold: hourly AuthFailure KPIs for Substation-A
+SecLogsHourly
+| where Facility == "Substation-A"
+| where EventType == "AuthFailure"
+| project HourBucket, EventCount, HighSeverityCount
+| order by HourBucket asc
+
+// Step 5 — Executive summary counts
+SecLogsParsed
+| where DestinationHost == "scada-gw.utility.local"
+| summarize
+    TotalEvents = count(),
+    AuthFailures = countif(EventType == "AuthFailure"),
+    HighCritical = countif(Severity in ("High", "Critical"))
+  by SourceSystem

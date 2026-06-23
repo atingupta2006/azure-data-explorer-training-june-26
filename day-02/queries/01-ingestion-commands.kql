@@ -1,0 +1,10 @@
+// Day 02 — Lab 1: Ingestion metadata commands
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-02/README.md Section 1
+// Theory: day-02/README.md Section 1
+// Run each block separately (Shift+Enter)
+
+.show tables
+
+.show ingestion failures
+
+.show database policy retention

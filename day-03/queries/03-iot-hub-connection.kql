@@ -1,0 +1,20 @@
+// Day 03 — Lab 3: IoT Hub telemetry to SecLogsRaw
+// Database: YOUR database (example: LogsDB_u01) | Hands-on: labs.md Lab 3 | Theory: day-03/README.md Section 3.3
+// Order: Step 1 here → 03-verify-iot-mapping.kql → Portal connection → class send → Step 2 here
+// Prerequisite: Lab 2 complete (Bronze 3000)
+
+// Step 1 — IoT Hub ingestion mapping (run before verify + Portal data connection)
+
+.create-or-alter table SecLogsRaw ingestion json mapping 'SecLogsRaw_IoTMapping' '[{"column":"IngestionTime","properties":{"path":"$.Timestamp"}},{"column":"SourceFile","properties":{"ConstValue":"iot-device-telemetry"}},{"column":"RecordFormat","properties":{"ConstValue":"IoT"}},{"column":"RawPayload","properties":{"path":"$"}}]'
+
+// Portal: iot-adx-tcs; policy iothubowner; consumer group = select existing adx (not Create new)
+
+.show table SecLogsRaw ingestion mappings
+
+// Step 2 — Verification after 500 IoT messages (expected: total 3500, IoT 500)
+SecLogsRaw
+| count
+
+SecLogsRaw
+| where RecordFormat == "IoT"
+| count

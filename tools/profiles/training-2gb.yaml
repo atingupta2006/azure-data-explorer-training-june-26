@@ -1,0 +1,45 @@
+# ~2 GB batch JSON + large CSV/streaming samples (maintainer / load-test profile)
+name: training-2gb
+description: Multi-GB bronze batch files for ADLS ingest and performance labs
+scale_factor: 10000
+data_dir: data-heavy
+base_profile: lab-baseline
+paths:
+  bronze_json: bronze/sec-app-logs.json
+  bronze_csv: bronze/sec-web-logs.csv
+  bronze_ndjson: bronze/sec-web-logs.ndjson
+  eventhub: streaming/sec-events-sample.json
+  iot: iot/device-telemetry.json
+counts:
+  practice_security_events: 2000
+  auth_failure_day1: 400
+  firewall_deny_day1: 500
+  bronze_json: 7800000
+  bronze_csv: 3120000
+  bronze_batch: 10920000
+  eventhub: 50000
+  iot: 50000
+  bronze_total: 11020000
+  silver: 11020000
+  auth_failure_silver: 1560000
+  source_systems: 4
+  threat_intel: 8
+  gold_sum_event_count: 11020000
+  rls_demo: 10
+auth_failure_breakdown:
+  batch_json: 1560000
+  batch_csv: 624000
+  eventhub: 20000
+  iot: 0
+eventhub_event_types:
+  AuthFailure: 20000
+  FirewallDeny: 10000
+  VPNLogin: 20000
+json_event_types:
+  AuthFailure: 1560000
+  AuthSuccess: 1040000
+  FirewallDeny: 2080000
+  FirewallAllow: 1040000
+  VPNLogin: 1040000
+  ConfigChange: 520000
+  PrivilegeEscalation: 520000

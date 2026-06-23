@@ -1,0 +1,31 @@
+// Day 02 — Lab 6: Verify Bronze layer SecLogsRaw
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-02/README.md Section 6.4
+// Run Q1–Q5 one block at a time. Locked total: 2500 (JSON 1500 + CSV 1000)
+
+// Q1 — Total row count (expected: 2500)
+SecLogsRaw
+| count
+
+// Q2 — Rows by source file (expected: sec-app-logs.json 1500, sec-web-logs.csv 1000)
+SecLogsRaw
+| summarize RowCount = count() by SourceFile, RecordFormat
+| order by SourceFile asc
+
+// Q3 — Peek EventType inside RawPayload (JSON rows)
+SecLogsRaw
+| where RecordFormat == "JSON"
+| take 5
+| extend EventType = tostring(RawPayload.EventType)
+| project IngestionTime, SourceFile, EventType, RawPayload
+
+// Q4 — AuthFailure by format (expected: JSON 300, CSV 200)
+SecLogsRaw
+| extend EventType = tostring(RawPayload.EventType)
+| where EventType == "AuthFailure"
+| summarize FailureCount = count() by RecordFormat
+
+// Q5 — Time-bounded by format (expected: JSON 1500 + CSV 1000 = 2500)
+// IngestionTime is mapped from event Timestamp (2026-06-11 .. 2026-06-12)
+SecLogsRaw
+| where IngestionTime between (datetime(2026-06-11) .. datetime(2026-06-13))
+| summarize Events = count() by RecordFormat

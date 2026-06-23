@@ -1,0 +1,44 @@
+# Original locked counts — baseline for sync-lab-counts replacements
+name: lab-baseline
+description: Original classroom lab counts (before scale-up)
+scale_factor: 1
+data_dir: data
+paths:
+  bronze_json: bronze/sec-app-logs.json
+  bronze_csv: bronze/sec-web-logs.csv
+  bronze_ndjson: bronze/sec-web-logs.ndjson
+  eventhub: streaming/sec-events-sample.json
+  iot: iot/device-telemetry.json
+counts:
+  practice_security_events: 20
+  auth_failure_day1: 4
+  firewall_deny_day1: 5
+  bronze_json: 15
+  bronze_csv: 10
+  bronze_batch: 25
+  eventhub: 5
+  iot: 5
+  bronze_total: 35
+  silver: 35
+  auth_failure_silver: 7
+  source_systems: 4
+  threat_intel: 8
+  gold_sum_event_count: 35
+  rls_demo: 10
+auth_failure_breakdown:
+  batch_json: 3
+  batch_csv: 2
+  eventhub: 2
+  iot: 0
+eventhub_event_types:
+  AuthFailure: 2
+  FirewallDeny: 1
+  VPNLogin: 2
+json_event_types:
+  AuthFailure: 3
+  AuthSuccess: 2
+  FirewallDeny: 4
+  FirewallAllow: 2
+  VPNLogin: 2
+  ConfigChange: 1
+  PrivilegeEscalation: 1

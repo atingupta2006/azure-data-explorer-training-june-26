@@ -1,0 +1,6 @@
+// Day 02 — JSON ingestion mapping for SecLogsRaw (Lab 4)
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-02/README.md Sections 4–5
+
+.create-or-alter table SecLogsRaw ingestion json mapping 'SecLogsRaw_JsonMapping' '[{"column":"IngestionTime","properties":{"path":"$.Timestamp"}},{"column":"SourceFile","properties":{"ConstValue":"sec-app-logs.json"}},{"column":"RecordFormat","properties":{"ConstValue":"JSON"}},{"column":"RawPayload","properties":{"path":"$"}}]'
+
+.show table SecLogsRaw ingestion mappings

@@ -1,0 +1,31 @@
+// Day 04 — Verify Silver baseline from Day 3
+// Database: YOUR database (example: LogsDB_u01) | Theory: README §1.11 | Lab 1 gate
+// Gate: stop if Q1 ≠ 3500 or Q3 Match = false
+// Q1 — Total Silver rows (expected: 3500)
+SecLogsParsed
+| count
+
+// Q2 — Rows by SourceSystem (expected: Batch-CSV 1000, Batch-JSON 1500, EventHub 500, IoT-Hub 500)
+SecLogsParsed
+| summarize RowCount = count() by SourceSystem
+| order by SourceSystem asc
+
+// Q3 — Bronze vs Silver row parity (run as one block)
+print
+    BronzeRows = toscalar(SecLogsRaw | count),
+    SilverRows = toscalar(SecLogsParsed | count),
+    Match = (toscalar(SecLogsRaw | count) == toscalar(SecLogsParsed | count))
+
+// Q4 — AuthFailure count (expected: 700)
+SecLogsParsed
+| where EventType == "AuthFailure"
+| count
+
+// Q5 — Distinct source systems (expected: 4)
+SecLogsParsed
+| summarize SourceSystemCount = dcount(SourceSystem)
+
+// Q6 — Event types in Silver
+SecLogsParsed
+| summarize EventCount = count() by EventType
+| order by EventCount desc

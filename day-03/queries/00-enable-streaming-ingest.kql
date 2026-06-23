@@ -1,0 +1,5 @@
+// Day 03 — Enable streaming ingestion on SecLogsRaw (before Labs 2–3)
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-03/README.md Section 2.4
+.alter table SecLogsRaw policy streamingingestion enable
+
+.show table SecLogsRaw policy streamingingestion

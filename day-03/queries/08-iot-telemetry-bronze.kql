@@ -1,0 +1,37 @@
+// Day 03 — Lab 8: Analyze IoT telemetry on Bronze (before Silver)
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-03/README.md Section 3.7
+// Prerequisite: Lab 3 complete — SecLogsRaw = 3500, RecordFormat IoT = 500
+// deviceId lives in RawPayload until Silver; use RawPayload.field syntax on Bronze
+
+// Q1 — IoT row count (expected: 500)
+SecLogsRaw
+| where RecordFormat == "IoT"
+| count
+
+// Q2 — Event types in device telemetry (expected: SensorAnomaly 200, others 100 each)
+SecLogsRaw
+| where RecordFormat == "IoT"
+| summarize EventCount = count() by EventType = tostring(RawPayload.EventType)
+| order by EventCount desc
+
+// Q3 — Events per device (expected: substation-sensor-01 200, -02 200, -03 100)
+SecLogsRaw
+| where RecordFormat == "IoT"
+| summarize MessageCount = count() by DeviceId = tostring(RawPayload.deviceId)
+| order by DeviceId asc
+
+// Q4 — Critical vibration anomalies at Substation-D (expected: 100 rows; sample first 10)
+SecLogsRaw
+| where RecordFormat == "IoT"
+| where tostring(RawPayload.EventType) == "SensorAnomaly"
+| where tostring(RawPayload.Facility) == "Substation-D"
+| where tostring(RawPayload.Severity) == "Critical"
+| project Timestamp = tostring(RawPayload.Timestamp), DeviceId = RawPayload.deviceId, SourceIP = RawPayload.SourceIP, Message = RawPayload.Message
+| order by Timestamp asc
+| take 10
+
+// Q5 — Facility breakdown (expected: Substation-C 300, Substation-D 100, DMZ-Firewall 100)
+SecLogsRaw
+| where RecordFormat == "IoT"
+| summarize EventCount = count() by Facility = tostring(RawPayload.Facility)
+| order by EventCount desc

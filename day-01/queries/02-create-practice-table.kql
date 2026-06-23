@@ -1,0 +1,16 @@
+// Day 01 — Create practice table
+// Database: LogsDB_u01 (select in Web UI before running)
+// If table already exists, drop it first or use .create-or-replace before re-running
+
+.create table PracticeSecurityEvents (
+    Timestamp: datetime,
+    EventType: string,
+    SourceIP: string,
+    DestinationHost: string,
+    UserPrincipal: string,
+    Severity: string,
+    Message: string,
+    Facility: string
+)
+
+.show table PracticeSecurityEvents cslschema

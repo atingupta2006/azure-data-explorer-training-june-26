@@ -1,0 +1,17 @@
+// Day 04 — Lab 2: Verify ThreatIntelRef before join queries
+// Database: YOUR database (example: LogsDB_u01) | Hands-on: labs.md Lab 2
+// Prerequisite: Q1–Q2 in 02-threatintel-join.kql (table created and seeded)
+// Run after Q2, before Q3 — confirms dimension table is ready for joins
+
+// Q1 — Row count (expected: 8)
+ThreatIntelRef
+| count
+
+// Q2 — Match types breakdown (expected: 5 SourceIP, 3 EventType)
+ThreatIntelRef
+| summarize RowCount = count() by MatchType
+| order by MatchType asc
+
+// Q3 — Sample rows (confirm MatchKey values used in join keys)
+ThreatIntelRef
+| order by MatchType asc, MatchKey asc

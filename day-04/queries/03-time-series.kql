@@ -1,0 +1,17 @@
+// Day 04 — Time-series with make-series
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-04/README.md Section 3
+
+// Q1 — Hourly counts (input to time-series)
+SecLogsParsed
+| summarize EventCount = count() by HourBucket = bin(Timestamp, 1h), EventType
+| order by HourBucket asc, EventType asc
+
+// Q2 — make-series: hourly event counts per EventType (expected: ≥1 series with dynamic array)
+SecLogsParsed
+| make-series EventCount=count() default=0 on Timestamp from datetime(2026-06-11) to datetime(2026-06-13) step 1h by EventType
+| project EventType, EventCount
+
+// Q3 — make-series for AuthFailure only
+SecLogsParsed
+| where EventType == "AuthFailure"
+| make-series EventCount=count() default=0 on Timestamp from datetime(2026-06-11) to datetime(2026-06-13) step 1h

@@ -1,0 +1,24 @@
+// Day 05 — Query optimization and join best practices
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-05/README.md Section 1
+// Gate: run 00-verify-pipeline-baseline.kql first — Q4 Ready must be true
+
+// Q1 — GOOD: time-bounded scan with early filter (expected: AuthFailure total 700 across facilities)
+SecLogsParsed
+| where Timestamp > datetime(2026-06-11)
+| where EventType == "AuthFailure"
+| summarize FailureCount = count() by Facility
+| order by FailureCount desc
+
+// Q2 — GOOD: project only needed columns before join (expected: ~409 enriched matches summarized by ThreatCategory)
+SecLogsParsed
+| where Timestamp > datetime(2026-06-11)
+| project Timestamp, SourceIP, EventType, Facility
+| join kind=inner (
+    ThreatIntelRef
+    | where MatchType == "SourceIP"
+    | project MatchKey, ThreatCategory
+) on $left.SourceIP == $right.MatchKey
+| summarize EnrichedEvents = count() by ThreatCategory
+
+// Q3 — Compare row counts: unbounded vs bounded (lab table is small — pattern for TB scale)
+print UnboundedPattern = "Avoid on TB tables", BoundedPattern = "Always filter Timestamp first"

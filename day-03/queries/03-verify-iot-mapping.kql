@@ -1,0 +1,24 @@
+// Day 03 — Lab 3: Verify IoT mapping before Portal data connection
+// Database: YOUR database (example: LogsDB_u01) | Hands-on: labs.md Lab 3 step 4
+// Prerequisite: Step 1 in 03-iot-hub-connection.kql (SecLogsRaw_IoTMapping exists)
+// Run all three steps in order on dataexplorer.azure.com — proves mapping works without IoT Hub
+// Test JSON uses sentinel deviceId NOT in device-telemetry.json — Step 3 deletes only that row
+
+// Step 1 — Inline ingest one test JSON line (same shape as device-telemetry.json)
+.ingest inline into table SecLogsRaw with (format='multijson', ingestionMappingReference='SecLogsRaw_IoTMapping') <|
+{"deviceId":"lab-verify-test","EventType":"SensorAnomaly","SourceIP":"10.20.9.99","DestinationHost":"iot-gateway.utility.local","UserPrincipal":"","Severity":"High","Message":"ADX Lab 3 mapping verify — safe to delete","Facility":"Substation-C","Timestamp":"2026-06-11T08:59:59Z"}
+
+// Step 2 — Wait ~20 seconds, then run. PASS before creating the Portal connection.
+SecLogsRaw
+| where RecordFormat == "IoT" and SourceFile == "iot-device-telemetry" and RawPayload.deviceId == "lab-verify-test"
+| order by IngestionTime desc
+| take 1
+| project IngestionTime, SourceFile, RecordFormat, EventType = RawPayload.EventType, deviceId = RawPayload.deviceId, Message = RawPayload.Message
+
+// Expected: SourceFile = iot-device-telemetry, RecordFormat = IoT, deviceId = lab-verify-test
+// If blank/null columns: re-run Step 1 in 03-iot-hub-connection.kql — do not open Portal yet.
+
+// Step 3 — Remove only the sentinel test row (Bronze count returns to 3000)
+.delete table SecLogsRaw records <|
+SecLogsRaw
+| where RecordFormat == "IoT" and RawPayload.deviceId == "lab-verify-test" and RawPayload.Message == "ADX Lab 3 mapping verify — safe to delete"

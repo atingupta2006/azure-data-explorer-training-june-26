@@ -1,0 +1,24 @@
+// Day 05 — Verify Gold MV parity (Lab 4 gate)
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-05/README.md Section 4 | Lab 4
+// Prerequisite: 04-mv-vs-ondemand.kql Q1–Q3 completed
+
+// Q1 — MV registered and healthy
+.show materialized-views
+| where Name == "SecLogsHourly"
+| project Name, SourceTable, IsHealthy, LastRunResult
+
+// Q2 — Sample Gold rows
+SecLogsHourly
+| order by HourBucket asc, Facility asc, EventType asc
+| take 5
+
+// Q3 — Locked total (expected sum EventCount = 3500)
+SecLogsHourly
+| summarize TotalEvents = sum(EventCount), HighSeverityTotal = sum(HighSeverityCount)
+
+// Q4 — Silver vs Gold parity (run as one block; expected Match = true)
+print
+    SilverRows = toscalar(SecLogsParsed | count),
+    GoldEventCount = toscalar(SecLogsHourly | summarize sum(EventCount)),
+    TotalsMatch = (toscalar(SecLogsParsed | count) == toscalar(SecLogsHourly | summarize sum(EventCount))),
+    Match = (toscalar(SecLogsParsed | count) == toscalar(SecLogsHourly | summarize sum(EventCount)))

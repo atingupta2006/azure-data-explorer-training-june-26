@@ -1,0 +1,22 @@
+// Day 04 — Window functions on ordered events
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-04/README.md Section 5
+
+// Q1 — row_number restarts when Facility changes (ordered by Facility, then time)
+SecLogsParsed
+| order by Facility, Timestamp asc
+| serialize
+| extend EventSeqInFacility = row_number(1, prev(Facility) != Facility)
+
+// Q2 — Previous event type and minutes since previous event
+SecLogsParsed
+| order by Timestamp asc
+| serialize
+| extend PrevEventType = prev(EventType), MinutesSincePrev = datetime_diff('minute', Timestamp, prev(Timestamp))
+
+// Q3 — Auth success then failure at same Facility (expected: ~182 rows)
+SecLogsParsed
+| order by Facility, Timestamp asc
+| serialize
+| extend PrevType = prev(EventType), PrevFacility = prev(Facility)
+| where EventType == "AuthFailure" and PrevType == "AuthSuccess" and Facility == PrevFacility
+| project Timestamp, Facility, EventType, PrevType, Message

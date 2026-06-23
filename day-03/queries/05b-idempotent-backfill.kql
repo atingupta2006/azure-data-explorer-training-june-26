@@ -1,0 +1,32 @@
+// Day 03 — Optional idempotent Silver backfill (re-run safe)
+// Run ONLY if SecLogsParsed already has rows and you need to append missing Bronze rows.
+// Do not run in the same session as the primary backfill in 05-update-policy-backfill.kql.
+
+.set-or-append SecLogsParsed <|
+(
+    SecLogsRaw
+    | extend Timestamp = coalesce(todatetime(RawPayload.Timestamp), IngestionTime)
+    | extend EventType = tostring(RawPayload.EventType)
+    | extend SourceIP = tostring(RawPayload.SourceIP)
+    | extend DestinationHost = tostring(RawPayload.DestinationHost)
+    | extend UserPrincipal = tostring(RawPayload.UserPrincipal)
+    | extend Severity = tostring(RawPayload.Severity)
+    | extend Message = tostring(RawPayload.Message)
+    | extend Facility = tostring(RawPayload.Facility)
+    | extend SourceSystem = case(
+        RecordFormat == "JSON", "Batch-JSON",
+        RecordFormat == "CSV", "Batch-CSV",
+        RecordFormat == "EventHub", "EventHub",
+        RecordFormat == "IoT", "IoT-Hub",
+        "Unknown"
+    )
+    | join kind=leftanti (
+        SecLogsParsed
+        | project Timestamp, EventType, SourceIP, UserPrincipal
+    ) on Timestamp, EventType, SourceIP, UserPrincipal
+    | project Timestamp, EventType, SourceIP, DestinationHost,
+              UserPrincipal, Severity, Message, Facility, SourceSystem
+)
+
+SecLogsParsed
+| count

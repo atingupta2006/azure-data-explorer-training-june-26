@@ -1,0 +1,134 @@
+// Day 05 — Authentication, RBAC, and per-user RLS (hands-on)
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-05/README.md Section 6
+// RLS maps YOUR Entra ID UserPrincipalName → one AllowedFacility via RlsUserScope
+// Re-run safe: Q0 drop → Q3a–Q3d → Q4a–Q4c
+// Run ONE block at a time — do not combine Q3a and Q3b in one Shift+Enter
+
+// Q0 — Clean start (run before Q3a on re-run)
+.drop function RlsDemoUserFacilityScope ifexists
+
+.drop table RlsUserScope ifexists
+
+.drop table RlsDemoEvents ifexists
+
+// Q1 — Database principals (authorization)
+.show database principals
+
+// Q2 — Table-level policies overview (SecLogsParsed — read only; do not apply RLS here)
+.show table SecLogsParsed policy row_level_security
+
+// Q3a — Create demo event table (run alone; then Q3b)
+.create table RlsDemoEvents (
+    Timestamp: datetime,
+    Facility: string,
+    EventType: string,
+    Message: string
+)
+
+// Q3b — Seed 10 rows: 4 Substation-A + 3 Substation-B + 3 SCADA-Gateway
+.set-or-replace RlsDemoEvents <|
+let a = SecLogsParsed
+| where Facility == "Substation-A"
+| project Timestamp, Facility, EventType, Message
+| take 4;
+let b = SecLogsParsed
+| where Facility == "Substation-B"
+| project Timestamp, Facility, EventType, Message
+| take 3;
+let g = SecLogsParsed
+| where Facility == "SCADA-Gateway"
+| project Timestamp, Facility, EventType, Message
+| take 3;
+union a, b, g
+
+// Q3c — Scope table: maps User or Group → one allowed facility
+.create table RlsUserScope (
+    PrincipalType: string,
+    PrincipalName: string,
+    AllowedFacility: string
+)
+
+// Q3d — Register YOUR login (uses current_principal_details — no manual UPN typing)
+// Optional: change AllowedFacility to "Substation-B" or "SCADA-Gateway" and re-run Q3d only
+.set-or-replace RlsUserScope <|
+union
+(
+    print
+    PrincipalType = "User",
+    PrincipalName = tostring(current_principal_details()["UserPrincipalName"]),
+    AllowedFacility = "Substation-A"
+)
+
+.append RlsUserScope <|
+datatable(
+    PrincipalType:string,
+    PrincipalName:string,
+    AllowedFacility:string
+)
+[
+    "Group","SOC-Analysts","Substation-B",
+    "Group","OT-Engineers","SCADA-Gateway"
+]
+
+// Q6 — Before RLS: full seed + your scope row (expected: 10 rows; 1 scope row for your UPN)
+RlsDemoEvents
+| count
+
+RlsDemoEvents
+| summarize EventCount = count() by Facility
+| order by Facility asc
+
+RlsUserScope
+| where UserPrincipalName == tostring(current_principal_details()["UserPrincipalName"])
+
+// Q4a — Per-user RLS function (run alone; then Q4b)
+.create-or-alter function with () RlsDemoUserFacilityScope() {
+    let MyUpn = tostring(current_principal_details()["UserPrincipalName"]);
+    let MyGroups =
+        current_principal_details()["GroupMembership"];
+
+    let AllowedFacilities =
+        union
+        (
+            RlsUserScope
+            | where PrincipalType == "User"
+            | where PrincipalName == MyUpn
+            | project AllowedFacility
+        ),
+        (
+            RlsUserScope
+            | where PrincipalType == "Group"
+            | where PrincipalName in (MyGroups)
+            | project AllowedFacility
+        );
+
+    RlsDemoEvents
+    | where Facility in (AllowedFacilities)
+}
+
+RlsUserScope
+| order by PrincipalType asc, PrincipalName asc
+
+// Q4b — Enable RLS on demo table only (never on SecLogsParsed)
+.alter table RlsDemoEvents policy row_level_security enable "RlsDemoUserFacilityScope"
+
+// Q7 — With RLS enabled (expected: 4 if Substation-A, 3 if Substation-B or SCADA-Gateway)
+RlsDemoEvents
+| count
+
+RlsDemoEvents
+| summarize EventCount = count() by Facility
+
+// Q5 — Show active RLS policy (expected: IsEnabled = true; Query = RlsDemoUserFacilityScope)
+.show table RlsDemoEvents policy row_level_security
+
+// Q4c — Disable RLS so later labs and verify see all 10 rows again
+.alter table RlsDemoEvents policy row_level_security disable "RlsDemoUserFacilityScope"
+
+// Q8 — After disable (expected: 10 total; 4 + 3 + 3 by facility)
+RlsDemoEvents
+| count
+
+RlsDemoEvents
+| summarize EventCount = count() by Facility
+| order by Facility asc

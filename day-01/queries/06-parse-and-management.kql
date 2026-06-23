@@ -1,0 +1,24 @@
+// Day 01 — Parse, extract, and management commands
+// Database: LogsDB_u01 (select in Web UI before running)
+
+// Q1 — Extract username domain from UserPrincipal
+PracticeSecurityEvents
+| where isnotempty(UserPrincipal)
+| extend UserDomain = extract(@"@(.+)$", 1, UserPrincipal)
+| project Timestamp, EventType, UserPrincipal, UserDomain, Facility
+| take 10
+
+// Q2 — Top source IPs by event count
+PracticeSecurityEvents
+| summarize EventCount = count() by SourceIP
+| top 5 by EventCount desc
+
+// Q3 — Management: table schema
+.show table PracticeSecurityEvents cslschema
+
+// Q4 — Management: table details
+.show table PracticeSecurityEvents details
+
+// Q5 — Row count confirmation
+PracticeSecurityEvents
+| count

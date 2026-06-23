@@ -1,0 +1,17 @@
+// Day 03 — Lab 4: Create Silver table SecLogsParsed
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-03/README.md Section 6.2
+// Uses .create-merge so you can re-run safely if the table already exists in YOUR database
+
+.create-merge table SecLogsParsed (
+    Timestamp: datetime,
+    EventType: string,
+    SourceIP: string,
+    DestinationHost: string,
+    UserPrincipal: string,
+    Severity: string,
+    Message: string,
+    Facility: string,
+    SourceSystem: string
+)
+
+.show table SecLogsParsed cslschema

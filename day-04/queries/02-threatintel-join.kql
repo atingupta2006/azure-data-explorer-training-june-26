@@ -1,0 +1,49 @@
+// Day 04 — Reference table and join enrichment
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-04/README.md Section 2
+// Re-run safe in YOUR database: Q0 drops prior lab table; Q2 uses .set-or-replace
+
+// Q0 — Remove prior lab table (safe on first run; required before Q1 on re-run)
+.drop table ThreatIntelRef ifexists
+
+// Q1 — Create reference (dimension) table
+.create table ThreatIntelRef (
+    MatchKey: string,
+    MatchType: string,
+    ThreatCategory: string,
+    SeverityHint: string
+)
+
+// Q2 — Seed (load) 8 synthetic IOC / pattern rows into the empty table
+.set-or-replace ThreatIntelRef <|
+datatable(MatchKey:string, MatchType:string, ThreatCategory:string, SeverityHint:string)
+[
+    "10.20.1.44", "SourceIP", "BruteForceTarget", "Critical",
+    "203.0.113.50", "SourceIP", "ExternalScanner", "High",
+    "203.0.113.80", "SourceIP", "ExternalScanner", "High",
+    "10.20.8.1", "SourceIP", "VPNAbuse", "High",
+    "10.20.9.3", "SourceIP", "OTAnomaly", "High",
+    "AuthFailure", "EventType", "CredentialAttack", "High",
+    "FirewallDeny", "EventType", "PerimeterBlock", "Medium",
+    "PrivilegeEscalation", "EventType", "PrivilegeAbuse", "Critical"
+]
+
+// Q3 — Join Silver facts to reference on SourceIP (expected: ~409 rows, minimum ≥300)
+SecLogsParsed
+| join kind=leftouter (
+    ThreatIntelRef
+    | where MatchType == "SourceIP"
+    | project MatchKey, ThreatCategory, SeverityHint
+) on $left.SourceIP == $right.MatchKey
+| where isnotempty(ThreatCategory)
+| project Timestamp, EventType, SourceIP, Facility, ThreatCategory, SeverityHint
+| order by Timestamp asc
+
+// Q4 — Join on EventType (expected: 3 summary rows — 800 / 700 / 200)
+SecLogsParsed
+| join kind=leftouter (
+    ThreatIntelRef
+    | where MatchType == "EventType"
+    | project MatchKey, ThreatCategory, SeverityHint
+) on $left.EventType == $right.MatchKey
+| where isnotempty(ThreatCategory)
+| summarize MatchCount = count() by ThreatCategory, EventType

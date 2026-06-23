@@ -1,0 +1,45 @@
+# 100× lab scale — recommended for instructor-led training (~3,500 pipeline rows)
+name: heavy-100x
+description: 100× classroom counts for realistic query/ingest volume (~MB-scale files)
+scale_factor: 100
+data_dir: data-heavy
+base_profile: lab-baseline
+paths:
+  bronze_json: bronze/sec-app-logs.json
+  bronze_csv: bronze/sec-web-logs.csv
+  bronze_ndjson: bronze/sec-web-logs.ndjson
+  eventhub: streaming/sec-events-sample.json
+  iot: iot/device-telemetry.json
+counts:
+  practice_security_events: 2000
+  auth_failure_day1: 400
+  firewall_deny_day1: 500
+  bronze_json: 1500
+  bronze_csv: 1000
+  bronze_batch: 2500
+  eventhub: 500
+  iot: 500
+  bronze_total: 3500
+  silver: 3500
+  auth_failure_silver: 700
+  source_systems: 4
+  threat_intel: 8
+  gold_sum_event_count: 3500
+  rls_demo: 10
+auth_failure_breakdown:
+  batch_json: 300
+  batch_csv: 200
+  eventhub: 200
+  iot: 0
+eventhub_event_types:
+  AuthFailure: 200
+  FirewallDeny: 100
+  VPNLogin: 200
+json_event_types:
+  AuthFailure: 300
+  AuthSuccess: 200
+  FirewallDeny: 400
+  FirewallAllow: 200
+  VPNLogin: 200
+  ConfigChange: 100
+  PrivilegeEscalation: 100

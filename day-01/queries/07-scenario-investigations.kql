@@ -1,0 +1,88 @@
+// Day 01 — Scenario-based SOC investigations (Lab 7)
+// Database: YOUR database (select in Web UI before running)
+// Prerequisite: Labs 2–3 complete — PracticeSecurityEvents loaded (2000 rows)
+// Run each scenario block separately (Shift+Enter). Discuss findings before the next block.
+
+// Scenario 1 — Brute-force watch: repeated AuthFailure on the SCADA gateway
+// Question: Which source IPs drove the most failures against scada-gw.utility.local?
+// Expected: multiple rows (top IPs with FailureCount >= 3)
+PracticeSecurityEvents
+| where DestinationHost == "scada-gw.utility.local" and EventType == "AuthFailure"
+| summarize FailureCount = count() by SourceIP
+| where FailureCount >= 3
+| order by FailureCount desc, SourceIP asc
+
+// Scenario 2 — After-hours activity (outside 08:00–18:00 UTC, lab window 2026-06-10 .. 2026-06-12)
+// Question: What event types appear outside normal business hours?
+// Expected: multiple rows (early-morning and evening buckets)
+PracticeSecurityEvents
+| where Timestamp between (datetime(2026-06-10) .. datetime(2026-06-12))
+| extend HourUTC = hourofday(Timestamp)
+| where HourUTC < 8 or HourUTC >= 18
+| summarize Events = count() by EventType, HourUTC
+| order by HourUTC asc, Events desc
+
+// Scenario 3 — Facility risk ranking (High + Critical severity only)
+// Question: Which substations or zones produce the most serious events?
+PracticeSecurityEvents
+| where Severity in ("High", "Critical")
+| summarize HighSeverityEvents = count() by Facility
+| order by HighSeverityEvents desc
+| render barchart
+
+// Scenario 4 — Privilege escalation correlated with prior auth failures (let + filter)
+// Question: Did any user hit AuthFailure before a PrivilegeEscalation event?
+let FailedUsers = PracticeSecurityEvents
+| where EventType == "AuthFailure" and isnotempty(UserPrincipal)
+| distinct UserPrincipal;
+PracticeSecurityEvents
+| where EventType == "PrivilegeEscalation" and UserPrincipal in (FailedUsers)
+| project Timestamp, UserPrincipal, DestinationHost, Facility, Message
+| order by Timestamp asc
+
+// Scenario 5 — VPN session balance (unclosed sessions?)
+// Question: Who has more VPN logins than logouts in the dataset?
+PracticeSecurityEvents
+| where EventType in ("VPNLogin", "VPNLogout") and isnotempty(UserPrincipal)
+| summarize Logins = countif(EventType == "VPNLogin"), Logouts = countif(EventType == "VPNLogout") by UserPrincipal
+| extend OpenSessions = Logins - Logouts
+| where OpenSessions > 0
+| order by OpenSessions desc
+
+// Scenario 6 — Firewall deny hotspots by /24 subnet
+// Question: Which subnets generate the most inbound blocks?
+PracticeSecurityEvents
+| where EventType == "FirewallDeny"
+| extend Subnet24 = extract(@"^(\d+\.\d+\.\d+)", 1, SourceIP)
+| summarize DenyCount = count() by Subnet24
+| top 10 by DenyCount desc
+
+// Scenario 7 — Dual-signal hosts (AuthFailure AND FirewallDeny on same destination)
+// Question: Which hosts show both failed logins and firewall blocks?
+// Expected: 2 rows (vpn.utility.local, scada-gw.utility.local)
+PracticeSecurityEvents
+| summarize AuthFailures = countif(EventType == "AuthFailure"), FirewallDenies = countif(EventType == "FirewallDeny") by DestinationHost
+| where AuthFailures > 0 and FirewallDenies > 0
+| extend TotalSignals = AuthFailures + FirewallDenies
+| order by TotalSignals desc
+
+// Scenario 8 — Configuration change audit trail
+// Question: Who changed what, and on which host?
+PracticeSecurityEvents
+| where EventType == "ConfigChange"
+| project Timestamp, UserPrincipal, DestinationHost, Facility, Severity, Message
+| order by Timestamp asc
+
+// Scenario 9 — Event-type × severity matrix
+// Question: Which combinations dominate the incident window?
+PracticeSecurityEvents
+| summarize Events = count() by EventType, Severity
+| order by Events desc
+
+// Scenario 10 — Substation-A incident timeline (narrative walkthrough)
+// Question: Reconstruct the sequence of events at Substation-A for a briefing
+PracticeSecurityEvents
+| where Facility == "Substation-A"
+| where Timestamp between (datetime(2026-06-10T08:00:00Z) .. datetime(2026-06-10T12:00:00Z))
+| project Timestamp, EventType, SourceIP, UserPrincipal, Severity, Message
+| order by Timestamp asc

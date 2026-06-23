@@ -1,0 +1,33 @@
+// Day 03 — Debug Event Hub rows (null / blank RawPayload)
+// Run on dataexplorer.azure.com after events were sent but columns look empty.
+// Fix: labs.md — Troubleshooting → Event Hub rows null or blank
+
+// Q1 — Compare a good batch row vs a streaming row
+SecLogsRaw
+| where RecordFormat == "JSON"
+| take 1
+| project kind = "batch-JSON-ok", IngestionTime, SourceFile, RecordFormat, EventType = RawPayload.EventType, RawPayload
+
+SecLogsRaw
+| where RecordFormat == "EventHub" or (isempty(RecordFormat) and isnotnull(RawPayload))
+| take 3
+| project kind = "eventhub-row", IngestionTime, SourceFile, RecordFormat, EventType = RawPayload.EventType, RawPayload
+
+// Q2 — Mapping registered? (expect SecLogsRaw_EventHubMapping among mappings)
+.show table SecLogsRaw ingestion mappings
+
+// Q3 — Ingestion failures (empty grid is OK)
+.show ingestion failures
+| where Table == "SecLogsRaw"
+| order by FailedOn desc
+| take 10
+
+// Q4 — Rows with missing lineage (mapping likely not applied on connection)
+SecLogsRaw
+| where isempty(RecordFormat) or isempty(SourceFile)
+| summarize count()
+
+// Q5 — EventHub rows with empty payload (format or path issue)
+SecLogsRaw
+| where RecordFormat == "EventHub"
+| summarize total = count(), empty_payload = countif(isnull(RawPayload) or RawPayload == dynamic(null))

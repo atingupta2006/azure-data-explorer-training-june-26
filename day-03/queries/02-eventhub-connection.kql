@@ -1,0 +1,21 @@
+// Day 03 — Lab 2: Event Hub streaming to SecLogsRaw
+// Database: YOUR database (example: LogsDB_u01) | Hands-on: labs.md Lab 2 | Theory: day-03/README.md Section 3.2
+// Order: 00-enable-streaming-ingest.kql → Step 1 here → 02-verify-eventhub-mapping.kql → Portal connection → class send → Step 2 here
+// Portal: eh-adx-tcs / sec-events; consumer group = + Create new in form (unique per student; not $Default)
+
+// Step 1 — Event Hub ingestion mapping (run before verify + Portal data connection)
+
+.create-or-alter table SecLogsRaw ingestion json mapping 'SecLogsRaw_EventHubMapping' '[{"column":"IngestionTime","properties":{"path":"$.Timestamp"}},{"column":"SourceFile","properties":{"ConstValue":"sec-events"}},{"column":"RecordFormat","properties":{"ConstValue":"EventHub"}},{"column":"RawPayload","properties":{"path":"$"}}]'
+
+// Data connection: eh-adx-tcs / sec-events → SecLogsRaw, MULTIJSON, SecLogsRaw_EventHubMapping
+// Prerequisite: queries/00-enable-streaming-ingest.kql
+
+.show table SecLogsRaw ingestion mappings
+
+// Step 2 — Verification after 500 events are sent (expected: total 3000, EventHub 500)
+SecLogsRaw
+| count
+
+SecLogsRaw
+| where RecordFormat == "EventHub"
+| count

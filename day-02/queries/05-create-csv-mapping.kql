@@ -1,0 +1,36 @@
+// Day 02 — Lab 5: Native CSV mapping (staging table + promote function)
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-02/README.md Sections 4.3, 5.5
+// Flow: Blob CSV → SecLogsCsvStg (typed columns) → SecLogsCsvToBronze() → SecLogsRaw
+
+// Step 1 — Staging table (typed columns match CSV header)
+.create-merge table SecLogsCsvStg (
+    Timestamp: datetime,
+    EventType: string,
+    SourceIP: string,
+    DestinationHost: string,
+    UserPrincipal: string,
+    Severity: string,
+    Message: string,
+    Facility: string
+)
+
+// Step 2 — CSV ingestion mapping (ordinal = column position, 0-based; header skipped at ingest)
+.create-or-alter table SecLogsCsvStg ingestion csv mapping 'SecLogsCsvStg_CsvMapping' '[{"column":"Timestamp","Properties":{"Ordinal":"0"}},{"column":"EventType","Properties":{"Ordinal":"1"}},{"column":"SourceIP","Properties":{"Ordinal":"2"}},{"column":"DestinationHost","Properties":{"Ordinal":"3"}},{"column":"UserPrincipal","Properties":{"Ordinal":"4"}},{"column":"Severity","Properties":{"Ordinal":"5"}},{"column":"Message","Properties":{"Ordinal":"6"}},{"column":"Facility","Properties":{"Ordinal":"7"}}]'
+
+// Step 3 — Pack typed staging row into Bronze shape (dynamic RawPayload)
+.create-or-alter function SecLogsCsvToBronze() {
+    SecLogsCsvStg
+    | extend RawPayload = pack(
+        'Timestamp', Timestamp,
+        'EventType', EventType,
+        'SourceIP', SourceIP,
+        'DestinationHost', DestinationHost,
+        'UserPrincipal', UserPrincipal,
+        'Severity', Severity,
+        'Message', Message,
+        'Facility', Facility)
+    | project IngestionTime = Timestamp, SourceFile = 'sec-web-logs.csv', RecordFormat = 'CSV', RawPayload
+}
+
+.show table SecLogsCsvStg cslschema
+.show table SecLogsCsvStg ingestion mappings

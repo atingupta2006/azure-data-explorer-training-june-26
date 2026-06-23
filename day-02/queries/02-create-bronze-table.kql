@@ -1,0 +1,11 @@
+// Day 02 — Lab 3: Create Bronze table SecLogsRaw
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-02/README.md Section 6
+
+.create table SecLogsRaw (
+    IngestionTime: datetime,
+    SourceFile: string,
+    RecordFormat: string,
+    RawPayload: dynamic
+)
+
+.show table SecLogsRaw cslschema

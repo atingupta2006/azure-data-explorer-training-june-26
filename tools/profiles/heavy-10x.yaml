@@ -1,0 +1,38 @@
+name: heavy-10x
+description: 10x scale for load testing and maintainer dry-runs (not student labs)
+scale_factor: 10
+data_dir: data-heavy
+base_profile: lab
+paths:
+  bronze_json: bronze/sec-app-logs.json
+  bronze_csv: bronze/sec-web-logs.csv
+  eventhub: streaming/sec-events-sample.json
+  iot: iot/device-telemetry.json
+counts:
+  practice_security_events: 200
+  auth_failure_day1: 40
+  firewall_deny_day1: 50
+  bronze_json: 150
+  bronze_csv: 100
+  bronze_batch: 250
+  eventhub: 50
+  iot: 50
+  bronze_total: 350
+  silver: 350
+  auth_failure_silver: 70
+  source_systems: 4
+  threat_intel: 8
+  gold_sum_event_count: 350
+  rls_demo: 10
+eventhub_event_types:
+  AuthFailure: 20
+  FirewallDeny: 10
+  VPNLogin: 20
+json_event_types:
+  AuthFailure: 30
+  AuthSuccess: 20
+  FirewallDeny: 40
+  FirewallAllow: 20
+  VPNLogin: 20
+  ConfigChange: 10
+  PrivilegeEscalation: 10

@@ -1,0 +1,24 @@
+// Day 03 — Lab 2: Verify Event Hub mapping before Portal data connection
+// Database: YOUR database (example: LogsDB_u01) | Hands-on: labs.md Lab 2 step 5
+// Prerequisite: Step 1 in 02-eventhub-connection.kql (SecLogsRaw_EventHubMapping exists)
+// Run all three steps in order on dataexplorer.azure.com — proves mapping works without Event Hub
+// Test JSON uses sentinel values NOT in sec-events-sample.json — Step 3 deletes only that row
+
+// Step 1 — Inline ingest one test JSON line (uses the same mapping as the Portal connection)
+.ingest inline into table SecLogsRaw with (format='multijson', ingestionMappingReference='SecLogsRaw_EventHubMapping') <|
+{"EventType":"AuthFailure","SourceIP":"10.20.8.99","DestinationHost":"vpn.utility.local","UserPrincipal":"lab-verify@utility.com","Severity":"High","Message":"ADX Lab 2 mapping verify — safe to delete","Facility":"Corporate-VPN","Timestamp":"2026-06-11T08:59:59Z"}
+
+// Step 2 — Wait ~20 seconds, then run. PASS before creating the Portal connection.
+SecLogsRaw
+| where RecordFormat == "EventHub" and SourceFile == "sec-events" and RawPayload.SourceIP == "10.20.8.99" and RawPayload.Message == "ADX Lab 2 mapping verify — safe to delete"
+| order by IngestionTime desc
+| take 1
+| project IngestionTime, SourceFile, RecordFormat, EventType = RawPayload.EventType, SourceIP = RawPayload.SourceIP, Message = RawPayload.Message
+
+// Expected: SourceFile = sec-events, RecordFormat = EventHub, EventType = AuthFailure, SourceIP = 10.20.8.99
+// If blank/null columns: re-run Step 1 in 02-eventhub-connection.kql — do not open Portal yet.
+
+// Step 3 — Remove only the sentinel test row (Bronze count returns to 2500)
+.delete table SecLogsRaw records <|
+SecLogsRaw
+| where RecordFormat == "EventHub" and RawPayload.SourceIP == "10.20.8.99" and RawPayload.Message == "ADX Lab 2 mapping verify — safe to delete"

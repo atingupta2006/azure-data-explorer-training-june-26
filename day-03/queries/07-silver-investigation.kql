@@ -1,0 +1,30 @@
+// Day 03 — Investigate utility cyber events on Silver
+// Database: YOUR database (example: LogsDB_u01) | Theory: day-03/README.md Section 6.9 | Lab 7
+
+// Q1 — AuthFailure events (expected: 700 — 300 JSON + 200 CSV + 200 EventHub)
+SecLogsParsed
+| where EventType == "AuthFailure"
+| count
+
+// Q2 — Auth failures by source system
+SecLogsParsed
+| where EventType == "AuthFailure"
+| summarize FailureCount = count() by SourceSystem
+| order by FailureCount desc
+
+// Q3 — High/Critical severity (lab window — sample timestamps 2026-06-11 .. 2026-06-12)
+SecLogsParsed
+| where Timestamp between (datetime(2026-06-11) .. datetime(2026-06-13))
+| where Severity in ("High", "Critical")
+| summarize AlertCount = count() by Facility
+| order by AlertCount desc
+
+// Q4 — Streaming sources only
+SecLogsParsed
+| where SourceSystem in ("EventHub", "IoT-Hub")
+| project Timestamp, EventType, SourceIP, Facility, SourceSystem, Message
+| order by Timestamp asc
+
+// Q5 — Distinct source systems (expected: 4)
+SecLogsParsed
+| summarize SourceSystems = dcount(SourceSystem)
